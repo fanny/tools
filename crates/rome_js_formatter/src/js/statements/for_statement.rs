@@ -1,9 +1,10 @@
 use crate::prelude::*;
 use rome_formatter::write;
 
+use crate::utils::FormatBodyStatement;
+use rome_js_syntax::JsAnyStatement;
 use rome_js_syntax::JsForStatement;
 use rome_js_syntax::JsForStatementFields;
-use rome_js_syntax::{JsAnyStatement};
 
 #[derive(Debug, Clone, Default)]
 pub struct FormatJsForStatement;
@@ -49,18 +50,9 @@ impl FormatNodeRule<JsForStatement> for FormatJsForStatement {
                     space_token(),
                     format_delimited(l_paren_token.as_ref()?, &condition, r_paren_token.as_ref()?,)
                         .soft_block_indent(),
+                    FormatBodyStatement::new(body.as_ref()?)
                 ]
-            )?;
-
-            // Force semicolon insertion for empty bodies
-            match body.as_ref()? {
-                JsAnyStatement::JsEmptyStatement(body) => {
-                    write![f, [body.format(), token(";")]]
-                }
-                body => {
-                    write!(f, [space_token(), body.format()])
-                }
-            }
+            )
         });
 
         write!(f, [group_elements(&content)])

@@ -54,27 +54,24 @@ interface A3 // comment1
 }
 
 interface A4 // comment1
-  extends Base
-// comment3
-{
+  extends Base {
   // comment2
+  // comment3
   foo(): bar;
 }
 
 interface A5 // comment1
-  extends Base
-// comment3
-{
-  // comment4
+  extends Base {
   // comment2
+  // comment3
+  // comment4
   foo(): bar;
 }
 
 interface A6 // comment1
-  extends Base
-// comment3
-{
+  extends Base {
   // comment2
+  // comment3
   // comment4
   foo(): bar;
 }

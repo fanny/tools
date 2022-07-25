@@ -28,8 +28,7 @@ const objectWithComment = /** @type MyType */ (
 );
 
 const objectWithComment2 = /** @type MyType */ (
-  /* comment */
-  {
+  /* comment */ {
     foo: bar,
   }
 );

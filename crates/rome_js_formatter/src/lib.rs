@@ -460,13 +460,9 @@ mod test {
     // use this test check if your snippet prints as you wish, without using a snapshot
     fn quick_test() {
         let src = r#"
-interface Foo {
-  bar(
-    cuest: {a: number},
-    // TODO this is a very very very very long comment that makes it go > 80 columns ddd
-  ): number;
-
-}
+for(;;) continue
+// comment
+;
 
 "#;
         let syntax = SourceType::tsx();

@@ -41,8 +41,9 @@ const bifornCringerMoshedPerplexSawderGlyphsHa =
   someBigFunctionName("foo")("bar");
 
 if (true) {
-  node.id =
-    this.flowParseTypeAnnotatableIdentifier(/*allowPrimitiveOverride*/ true);
+  node.id = this.flowParseTypeAnnotatableIdentifier(
+    /*allowPrimitiveOverride*/ true,
+  );
 }
 
 const bifornCringerMoshedPerplexSawderGlyphsHb = someBigFunctionName(

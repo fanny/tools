@@ -56,12 +56,14 @@ switch (node && node.type) {
   case "MemberExpression":
     prop = node.property;
     break;
+
   // no default
 }
 
 switch (foo) {
   case "bar":
     doThing();
+
   // no default
 }
 

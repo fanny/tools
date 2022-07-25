@@ -307,7 +307,7 @@ impl<L: Language> Comments<L> {
             }
         }
 
-        dbg!(builder.finish())
+        builder.finish()
     }
 
     /// Returns `true` if the given [node] has
@@ -658,7 +658,6 @@ where
         comment: DecoratedComment<Context::Language>,
         token: &SyntaxToken<Context::Language>,
     ) {
-        dbg!(&comment);
         match self.context.comment_style().position_comment(comment) {
             CommentPosition::Leading { node, comment } => {
                 self.node_comments

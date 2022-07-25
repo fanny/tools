@@ -110,6 +110,7 @@ class C3 {
     return (#brand in obj) && (#method in obj) && (#getter in obj);
   }
 }
+
 // Invalid https://github.com/tc39/proposal-private-fields-in-in#try-statement
 // class C {
 //   #brand;

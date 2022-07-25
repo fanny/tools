@@ -94,14 +94,17 @@ where
             if total_lines_before > 0 {
                 write!(
                     f,
-                    [line_suffix(&format_with(|f| {
-                        match comment.lines_before() {
-                            0 | 1 => write!(f, [hard_line_break()])?,
-                            _ => write!(f, [empty_line()])?,
-                        };
+                    [
+                        line_suffix(&format_with(|f| {
+                            match comment.lines_before() {
+                                0 | 1 => write!(f, [hard_line_break()])?,
+                                _ => write!(f, [empty_line()])?,
+                            };
 
-                        write!(f, [comment.piece()])
-                    }))]
+                            write!(f, [comment.piece()])
+                        })),
+                        expand_parent()
+                    ]
                 )?;
             } else {
                 let content = format_with(|f| write!(f, [space_token(), comment.piece()]));

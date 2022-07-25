@@ -6,9 +6,9 @@ use rome_formatter::{
 use rome_js_syntax::suppression::{parse_suppression_comment, SuppressionCategory};
 
 use rome_js_syntax::{
-    JsAnyClass, JsArrayHole, JsBlockStatement, JsCallArgumentList, JsCallArguments,
-    JsConditionalExpression, JsFunctionBody, JsImportAssertionEntry, JsLanguage,
-    JsNamedImportSpecifiers, JsObjectMemberList, JsParameters, JsPropertyObjectMember,
+    JsAnyClass, JsArrayHole, JsBlockStatement, JsBreakStatement, JsCallArguments,
+    JsConditionalExpression, JsContinueStatement, JsFunctionBody, JsImportAssertionEntry,
+    JsLanguage, JsNamedImportSpecifiers, JsObjectMemberList, JsParameters, JsPropertyObjectMember,
     JsStaticMemberExpression, JsSyntaxKind, SourceType, TsConditionalType, TsEnumDeclaration,
     TsInterfaceDeclaration,
 };
@@ -159,7 +159,6 @@ impl CommentStyle<JsLanguage> for JsCommentStyle {
         &self,
         comment: DecoratedComment<JsLanguage>,
     ) -> CommentPosition<JsLanguage> {
-        dbg!(&comment);
         if let Some(following_node) = comment.following_node() {
             match following_node.kind() {
                 JsSyntaxKind::JS_SCRIPT | JsSyntaxKind::JS_MODULE => {
@@ -453,18 +452,6 @@ impl CommentStyle<JsLanguage> for JsCommentStyle {
                 }
             }
         }
-        //         if JsNamedImportSpecifiers::can_cast(enclosing_node.kind()) {
-        //     let import_specifiers = JsNamedImportSpecifiers::unwrap_cast(enclosing_node.clone());
-        //
-        //     if import_specifiers.r_curly_token().as_ref() == Ok(comment.following_token()) {
-        //         if let Some(Ok(last_specifier)) = import_specifiers.specifiers().iter().last() {
-        //             return CommentPosition::Trailing {
-        //                 node: last_specifier.into_syntax(),
-        //                 comment,
-        //             };
-        //         }
-        //     }
-        // }
 
         CommentPosition::Default(comment)
     }

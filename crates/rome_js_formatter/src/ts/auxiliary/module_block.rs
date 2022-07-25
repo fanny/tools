@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use rome_formatter::cst_builders::format_dangling_trivia;
 
 use rome_formatter::write;
 use rome_js_syntax::TsModuleBlock;
@@ -15,9 +16,16 @@ impl FormatNodeRule<TsModuleBlock> for FormatTsModuleBlock {
             r_curly_token,
         } = node.as_fields();
 
-        write!(
-            f,
-            [format_delimited(&l_curly_token?, &items.format(), &r_curly_token?,).block_indent()]
-        )
+        let r_curly_token = r_curly_token?;
+
+        write!(f, [l_curly_token.format()])?;
+
+        if items.is_empty() {
+            write!(f, [format_dangling_trivia(&r_curly_token).indented()])?;
+        } else {
+            write!(f, [block_indent(&items.format())])?;
+        }
+
+        write!(f, [r_curly_token.format()])
     }
 }
