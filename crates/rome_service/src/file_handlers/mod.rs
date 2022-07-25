@@ -9,7 +9,7 @@ use rome_js_syntax::{JsLanguage, TextRange, TextSize};
 use crate::{
     settings::SettingsHandle,
     workspace::{server::AnyParse, FixFileResult, RenameResult},
-    RomeError,
+    RomeError, Rules,
 };
 
 use self::{javascript::JsFileHandler, json::JsonFileHandler, unknown::UnknownFileHandler};
@@ -73,9 +73,10 @@ impl std::fmt::Display for Mime {
 
 type Parse = fn(&RomePath, &str) -> AnyParse;
 type DebugPrint = fn(&RomePath, AnyParse) -> String;
-type Lint = fn(&RomePath, AnyParse, RuleCategories) -> Vec<Diagnostic>;
-type CodeActions = fn(&RomePath, AnyParse, TextRange) -> Vec<AnalyzerAction<JsLanguage>>;
-type FixAll = fn(&RomePath, AnyParse) -> FixFileResult;
+type Lint = fn(&RomePath, AnyParse, RuleCategories, &Option<Rules>) -> Vec<Diagnostic>;
+type CodeActions =
+    fn(&RomePath, AnyParse, TextRange, &Option<Rules>) -> Vec<AnalyzerAction<JsLanguage>>;
+type FixAll = fn(&RomePath, AnyParse, &Option<Rules>) -> FixFileResult;
 type Format = fn(&RomePath, AnyParse, SettingsHandle<IndentStyle>) -> Result<Printed, RomeError>;
 type FormatRange =
     fn(&RomePath, AnyParse, SettingsHandle<IndentStyle>, TextRange) -> Result<Printed, RomeError>;

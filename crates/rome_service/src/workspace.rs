@@ -51,18 +51,16 @@
 //! document does not implement the required capability: for instance trying to
 //! format a file with a language that does not have a formatter
 
-use std::panic::RefUnwindSafe;
-
+use crate::{settings::WorkspaceSettings, RomeError};
 use rome_analyze::AnalyzerAction;
+pub use rome_analyze::RuleCategories;
 use rome_diagnostics::Diagnostic;
 use rome_formatter::{IndentStyle, Printed};
 use rome_fs::RomePath;
 use rome_js_syntax::{JsLanguage, TextRange, TextSize};
 use rome_text_edit::Indel;
 
-use crate::{settings::WorkspaceSettings, RomeError};
-
-pub use rome_analyze::RuleCategories;
+use std::panic::RefUnwindSafe;
 
 pub(crate) mod server;
 
