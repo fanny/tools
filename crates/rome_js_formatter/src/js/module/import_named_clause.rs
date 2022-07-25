@@ -64,13 +64,12 @@ impl FormatNodeRule<JsImportNamedClause> for FormatJsImportNamedClause {
                             )),
                             Ok(separator),
                         ) => {
-                            if specifier.syntax().has_comments_direct()
-                                || separator
-                                    .map(|sep| {
-                                        sep.has_leading_comments() || sep.has_trailing_comments()
-                                    })
+                            let comments = f.context().comments();
+                            if comments.has_comments(specifier.syntax()) || {
+                                separator
+                                    .map(|sep| comments.has_dangling_trivia(sep))
                                     .unwrap_or(false)
-                            {
+                            } {
                                 write!(f, [named_import.format()])
                             } else {
                                 let JsNamedImportSpecifiersFields {

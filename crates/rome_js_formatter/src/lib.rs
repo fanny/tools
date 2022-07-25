@@ -460,8 +460,15 @@ mod test {
     // use this test check if your snippet prints as you wish, without using a snapshot
     fn quick_test() {
         let src = r#"
-function foo([foo, /* not used */, /* not used */]) {
-}"#;
+interface Foo {
+  bar(
+    cuest: {a: number},
+    // TODO this is a very very very very long comment that makes it go > 80 columns ddd
+  ): number;
+
+}
+
+"#;
         let syntax = SourceType::tsx();
         let tree = parse(src, 0, syntax);
         let result = format_node(JsFormatContext::default(), &tree.syntax())

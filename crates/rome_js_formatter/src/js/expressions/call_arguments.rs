@@ -22,6 +22,7 @@ impl FormatNodeRule<JsCallArguments> for FormatJsCallArguments {
 
         let l_paren_token = l_paren_token?;
         let r_paren_token = r_paren_token?;
+
         if args.is_empty() {
             return write!(
                 f,

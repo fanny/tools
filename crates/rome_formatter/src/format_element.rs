@@ -57,12 +57,6 @@ pub enum FormatElement {
     /// line suffixes, potentially by inserting a hard line break.
     LineSuffixBoundary,
 
-    /// Special semantic element letting the printer and formatter know this is
-    /// a comment content, and it should only have a limited influence on the
-    /// formatting (for instance line breaks contained within will not cause
-    /// the parent group to break if this element is at the start of it).
-    Comment(Box<[FormatElement]>),
-
     /// A token that tracks tokens/nodes that are printed as verbatim.
     Verbatim(Verbatim),
 
@@ -148,7 +142,7 @@ impl Debug for FormatElement {
                 fmt.debug_tuple("LineSuffix").field(content).finish()
             }
             FormatElement::LineSuffixBoundary => write!(fmt, "LineSuffixBoundary"),
-            FormatElement::Comment(content) => fmt.debug_tuple("Comment").field(content).finish(),
+
             FormatElement::Verbatim(verbatim) => fmt
                 .debug_tuple("Verbatim")
                 .field(&verbatim.content)
@@ -344,12 +338,6 @@ impl Debug for BestFitting {
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Interned(Rc<FormatElement>);
-
-impl Interned {
-    pub(crate) fn try_unwrap(this: Interned) -> Result<FormatElement, Interned> {
-        Rc::try_unwrap(this.0).map_err(Interned)
-    }
-}
 
 impl Debug for Interned {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -568,7 +556,6 @@ impl FormatElement {
             FormatElement::Line(line_mode) => matches!(line_mode, LineMode::Hard | LineMode::Empty),
             FormatElement::Group(Group { content, .. })
             | FormatElement::ConditionalGroupContent(ConditionalGroupContent { content, .. })
-            | FormatElement::Comment(content)
             | FormatElement::Fill(Fill { content, .. })
             | FormatElement::Verbatim(Verbatim { content, .. })
             | FormatElement::Label(Label { content, .. })
@@ -600,7 +587,7 @@ impl FormatElement {
             FormatElement::List(list) => {
                 list.iter().rev().find_map(|element| element.last_element())
             }
-            FormatElement::Line(_) | FormatElement::Comment(_) => None,
+            FormatElement::Line(_) => None,
 
             FormatElement::Group(Group { content, .. }) | FormatElement::Indent(content) => {
                 content.iter().rev().find_map(FormatElement::last_element)

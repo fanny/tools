@@ -22,7 +22,9 @@ pub(crate) use format_conditional::{format_conditional, Conditional};
 pub(crate) use member_chain::format_call_expression;
 pub(crate) use object_like::JsObjectLike;
 pub(crate) use object_pattern_like::JsObjectPatternLike;
-use rome_formatter::{format_args, normalize_newlines, write, Buffer, VecBuffer};
+use rome_formatter::{
+    format_args, normalize_newlines, write, Buffer, Comments, CstFormatContext, VecBuffer,
+};
 use rome_js_syntax::{
     JsAnyExpression, JsAnyFunction, JsAnyStatement, JsInitializerClause, JsLanguage,
     JsTemplateElement, Modifiers, TsTemplateElement, TsType,
@@ -224,43 +226,29 @@ pub(crate) enum TemplateElement {
 
 impl Format<JsFormatContext> for TemplateElement {
     fn fmt(&self, f: &mut JsFormatter) -> FormatResult<()> {
-        let expression_is_plain = self.is_plain_expression()?;
+        let expression_is_plain = self.is_plain_expression(&f.context().comments())?;
+        // FIXME check if should hard group is still necessary
         let has_comments = self.has_comments();
         let should_hard_group = expression_is_plain && !has_comments;
 
-        let content = format_with(|f| {
-            match self {
-                TemplateElement::Js(template) => {
-                    write!(f, [template.expression().format()])?;
-                }
-                TemplateElement::Ts(template) => {
-                    write!(f, [template.ty().format()])?;
-                }
+        let content = format_with(|f| match self {
+            TemplateElement::Js(template) => {
+                write!(f, [template.expression().format()])
             }
-
-            write!(f, [line_suffix_boundary()])
+            TemplateElement::Ts(template) => {
+                write!(f, [template.ty().format()])
+            }
         });
 
+        write!(f, [self.dollar_curly_token().format()])?;
+
         if should_hard_group {
-            write!(
-                f,
-                [
-                    self.dollar_curly_token().format(),
-                    content,
-                    self.r_curly_token().format()
-                ]
-            )
+            write!(f, [content])?;
         } else {
-            write!(
-                f,
-                [format_delimited(
-                    &self.dollar_curly_token()?,
-                    &content,
-                    &self.r_curly_token()?
-                )
-                .soft_block_indent()]
-            )
+            write!(f, [soft_block_indent(&content)])?;
         }
+
+        write!(f, [line_suffix_boundary(), self.r_curly_token().format()])
     }
 }
 
@@ -285,7 +273,7 @@ impl TemplateElement {
     /// - `loreum ${this.something} ipsum`
     /// - `loreum ${a.b.c} ipsum`
     /// - `loreum ${a} ipsum`
-    fn is_plain_expression(&self) -> FormatResult<bool> {
+    fn is_plain_expression(&self, comments: &Comments<JsLanguage>) -> FormatResult<bool> {
         match self {
             TemplateElement::Js(template_element) => {
                 let current_expression = template_element.expression()?;
@@ -310,7 +298,7 @@ impl TemplateElement {
                         if let Some(function) =
                             JsAnyFunction::cast(current_expression.syntax().clone())
                         {
-                            Ok(is_simple_function_expression(function)?)
+                            Ok(is_simple_function_expression(function, comments)?)
                         } else {
                             Ok(false)
                         }

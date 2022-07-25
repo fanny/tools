@@ -2,18 +2,19 @@ use crate::prelude::*;
 use crate::utils::member_chain::is_member_call_chain;
 use crate::utils::object::write_member_name;
 use crate::utils::JsAnyBinaryLikeExpression;
-use rome_formatter::{format_args, write, CstFormatContext, VecBuffer};
+use rome_formatter::{format_args, write, Comments, CstFormatContext, VecBuffer};
+use rome_js_syntax::JsAnyLiteralExpression;
 use rome_js_syntax::{
     JsAnyAssignmentPattern, JsAnyBindingPattern, JsAnyCallArgument, JsAnyClassMemberName,
     JsAnyExpression, JsAnyFunctionBody, JsAnyObjectAssignmentPatternMember,
     JsAnyObjectBindingPatternMember, JsAnyObjectMemberName, JsAnyTemplateElement,
-    JsAssignmentExpression, JsInitializerClause, JsLiteralMemberName, JsObjectAssignmentPattern,
-    JsObjectAssignmentPatternProperty, JsObjectBindingPattern, JsPropertyClassMember,
-    JsPropertyClassMemberFields, JsPropertyObjectMember, JsSyntaxKind, JsVariableDeclarator,
-    TsAnyVariableAnnotation, TsIdentifierBinding, TsPropertySignatureClassMember,
-    TsPropertySignatureClassMemberFields, TsType, TsTypeAliasDeclaration, TsTypeArguments,
+    JsAssignmentExpression, JsInitializerClause, JsLanguage, JsLiteralMemberName,
+    JsObjectAssignmentPattern, JsObjectAssignmentPatternProperty, JsObjectBindingPattern,
+    JsPropertyClassMember, JsPropertyClassMemberFields, JsPropertyObjectMember, JsSyntaxKind,
+    JsVariableDeclarator, TsAnyVariableAnnotation, TsIdentifierBinding,
+    TsPropertySignatureClassMember, TsPropertySignatureClassMemberFields, TsType,
+    TsTypeAliasDeclaration, TsTypeArguments,
 };
-use rome_js_syntax::{JsAnyLiteralExpression, JsSyntaxNode};
 use rome_rowan::{declare_node_union, AstNode, SyntaxResult};
 use std::iter;
 
@@ -602,7 +603,7 @@ impl JsAnyAssignmentLike {
             return Ok(AssignmentLikeLayout::BreakLeftHandSide);
         }
 
-        if self.should_break_after_operator()? {
+        if self.should_break_after_operator(&f.context().comments())? {
             return Ok(AssignmentLikeLayout::BreakAfterOperator);
         }
 
@@ -799,13 +800,16 @@ impl JsAnyAssignmentLike {
     ///
     /// This function is small wrapper around [should_break_after_operator] because it has to work
     /// for nodes that belong to TypeScript too.
-    fn should_break_after_operator(&self) -> SyntaxResult<bool> {
+    fn should_break_after_operator(&self, comments: &Comments<JsLanguage>) -> SyntaxResult<bool> {
         let right = self.right()?;
 
         let result = if let Some(expression) = right.as_expression() {
-            should_break_after_operator(&expression)?
+            should_break_after_operator(&expression, comments)?
         } else {
-            has_new_line_before_comment(right.syntax())
+            comments
+                .leading_comments(right.syntax())
+                .iter()
+                .any(|comment| comment.lines_after() > 0)
         };
 
         Ok(result)
@@ -813,8 +817,15 @@ impl JsAnyAssignmentLike {
 }
 
 /// Checks if the function is entitled to be printed with layout [AssignmentLikeLayout::BreakAfterOperator]
-pub(crate) fn should_break_after_operator(right: &JsAnyExpression) -> SyntaxResult<bool> {
-    if has_new_line_before_comment(right.syntax()) {
+pub(crate) fn should_break_after_operator(
+    right: &JsAnyExpression,
+    comments: &Comments<JsLanguage>,
+) -> SyntaxResult<bool> {
+    if comments
+        .leading_comments(right.syntax())
+        .iter()
+        .any(|comment| comment.lines_after() > 0)
+    {
         return Ok(true);
     }
 
@@ -845,21 +856,6 @@ pub(crate) fn should_break_after_operator(right: &JsAnyExpression) -> SyntaxResu
     }
 
     Ok(false)
-}
-/// If checks if among leading trivias, we there's a sequence of [Newline, Comment]
-pub(crate) fn has_new_line_before_comment(node: &JsSyntaxNode) -> bool {
-    if let Some(leading_trivia) = node.first_leading_trivia() {
-        let mut seen_newline = false;
-        for piece in leading_trivia.pieces() {
-            if piece.is_comments() && seen_newline {
-                return true;
-            }
-            if piece.is_newline() {
-                seen_newline = true
-            }
-        }
-    }
-    false
 }
 
 impl Format<JsFormatContext> for JsAnyAssignmentLike {
@@ -1000,6 +996,7 @@ fn is_poorly_breakable_member_or_call_chain(
     expression: JsAnyExpression,
     f: &mut Formatter<JsFormatContext>,
 ) -> SyntaxResult<bool> {
+    let comments = f.context().comments();
     let threshold = f.context().line_width().value() / 4;
 
     // Only call and member chains are poorly breakable
@@ -1052,7 +1049,7 @@ fn is_poorly_breakable_member_or_call_chain(
         let is_breakable_call = match args.len() {
             0 => false,
             1 => match args.iter().next() {
-                Some(first_argument) => !is_short_argument(first_argument?, threshold)?,
+                Some(first_argument) => !is_short_argument(first_argument?, threshold, &comments)?,
                 None => false,
             },
             _ => true,
@@ -1079,8 +1076,12 @@ fn is_poorly_breakable_member_or_call_chain(
 /// We need it to decide if `JsCallExpression` with the argument is breakable or not
 /// If the argument is short the function call isn't breakable
 /// [Prettier applies]: https://github.com/prettier/prettier/blob/a043ac0d733c4d53f980aa73807a63fc914f23bd/src/language-js/print/assignment.js#L374
-fn is_short_argument(argument: JsAnyCallArgument, threshold: u16) -> SyntaxResult<bool> {
-    if argument.syntax().has_comments_direct() {
+fn is_short_argument(
+    argument: JsAnyCallArgument,
+    threshold: u16,
+    comments: &Comments<JsLanguage>,
+) -> SyntaxResult<bool> {
+    if comments.has_trivia(argument.syntax()) {
         return Ok(false);
     }
 

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use rome_formatter::cst_builders::format_dangling_trivia;
 
 use rome_formatter::write;
 use rome_js_syntax::JsStaticInitializationBlockClassMember;
@@ -22,14 +23,27 @@ impl FormatNodeRule<JsStaticInitializationBlockClassMember>
             r_curly_token,
         } = node.as_fields();
 
+        let r_curly_token = r_curly_token?;
+
         write!(f, [static_token.format(), space_token()])?;
 
-        write!(
-            f,
-            [
-                format_delimited(&l_curly_token?, &statements.format(), &r_curly_token?)
-                    .block_indent()
-            ]
-        )
+        if statements.is_empty() {
+            write!(
+                f,
+                [
+                    l_curly_token.format(),
+                    format_dangling_trivia(&r_curly_token).indented(),
+                    r_curly_token.format()
+                ]
+            )
+        } else {
+            write!(
+                f,
+                [
+                    format_delimited(&l_curly_token?, &statements.format(), &r_curly_token)
+                        .block_indent()
+                ]
+            )
+        }
     }
 }

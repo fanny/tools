@@ -50,15 +50,16 @@ pub use buffer::{
     WillBreakBuffer,
 };
 pub use builders::{
-    block_indent, comment, empty_line, get_lines_before, group_elements, hard_line_break,
-    if_group_breaks, if_group_fits_on_line, indent, labelled, line_suffix, soft_block_indent,
-    soft_line_break, soft_line_break_or_space, soft_line_indent_or_space, space_token, token,
-    BestFitting,
+    block_indent, empty_line, get_lines_before, group_elements, hard_line_break, if_group_breaks,
+    if_group_fits_on_line, indent, labelled, line_suffix, soft_block_indent, soft_line_break,
+    soft_line_break_or_space, soft_line_indent_or_space, space_token, token, BestFitting,
 };
 pub use comments::{
-    CommentKind, CommentPosition, CommentStyle, Comments, DecoratedComment, SourceComment,
+    CommentKind, CommentPosition, CommentStyle, Comments, DanglingTrivia, DecoratedComment,
+    SourceComment,
 };
 pub use format_element::{normalize_newlines, FormatElement, Token, Verbatim, LINE_TERMINATORS};
+pub use format_extensions::Memoized;
 pub use group_id::GroupId;
 use indexmap::IndexSet;
 use rome_rowan::{

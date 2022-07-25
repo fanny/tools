@@ -190,6 +190,10 @@ impl<L: Language> DecoratedComment<L> {
         self.lines_before
     }
 
+    pub fn lines_after(&self) -> u32 {
+        self.lines_after
+    }
+
     /// `true` if the comment is part of the tokens [trailing trivia](SyntaxToken::trailing_trivia)
     pub fn is_trailing_token_trivia(&self) -> bool {
         self.trailing_token_comment

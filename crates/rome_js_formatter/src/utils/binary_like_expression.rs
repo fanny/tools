@@ -266,7 +266,10 @@ fn is_inside_parenthesis(current_node: &JsSyntaxNode) -> bool {
 /// There are some cases where the indentation is done by the parent, so if the parent is already doing
 /// the indentation, then there's no need to do a second indentation.
 /// [Prettier applies]: https://github.com/prettier/prettier/blob/b0201e01ef99db799eb3716f15b7dfedb0a2e62b/src/language-js/print/binaryish.js#L122-L125
-fn should_not_indent_if_parent_indents(current_node: &JsAnyBinaryLikeLeftExpression) -> bool {
+fn should_not_indent_if_parent_indents(
+    current_node: &JsAnyBinaryLikeLeftExpression,
+    comments: &Comments<JsLanguage>,
+) -> bool {
     let parent = current_node.syntax().parent();
     let parent_kind = parent.as_ref().map(|node| node.kind());
 
@@ -278,7 +281,7 @@ fn should_not_indent_if_parent_indents(current_node: &JsAnyBinaryLikeLeftExpress
         | (Some(JsSyntaxKind::JS_INITIALIZER_CLAUSE), Some(JsSyntaxKind::JS_VARIABLE_DECLARATOR)) => {
             current_node
                 .as_expression()
-                .and_then(|expression| should_break_after_operator(expression).ok())
+                .and_then(|expression| should_break_after_operator(expression, comments).ok())
                 .unwrap_or(false)
         }
         (
@@ -381,7 +384,7 @@ impl FlattenItems {
         let operator = binary_like_expression.operator()?;
         let operator_token = binary_like_expression.operator_token()?;
 
-        let operator_has_trailing_comments = operator_token.has_trailing_comments();
+        let operator_has_trailing_comments = comments.has_dangling_trivia(&operator_token);
         let left_parenthesized = needs_parens(operator, &left)?;
         let mut left_item = FlattenItem::new(
             FlattenedBinaryExpressionPart::Group {
@@ -538,7 +541,8 @@ impl FlattenedBinaryExpressionPart {
                         f.join_with(soft_line_break_or_space())
                             .entries(groups)
                             .finish()
-                    } else if should_not_indent_if_parent_indents(current) {
+                    } else if should_not_indent_if_parent_indents(current, &f.context().comments())
+                    {
                         write!(
                             f,
                             [group_elements(&format_once(|f| {

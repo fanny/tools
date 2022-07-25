@@ -23,17 +23,22 @@ impl FormatNodeRule<JsMethodObjectMember> for FormatJsMethodObjectMember {
             write!(f, [async_token.format(), space_token()])?;
         }
 
-        write![
+        write!(
             f,
-            [
-                star_token.format(),
-                name.format(),
-                type_parameters.format(),
-                parameters.format(),
-                return_type_annotation.format(),
-                space_token(),
-                body.format(),
-            ]
-        ]
+            [group_elements(&format_with(|f| {
+                write!(
+                    f,
+                    [
+                        star_token.format(),
+                        name.format(),
+                        type_parameters.format(),
+                        group_elements(&parameters.format()),
+                        return_type_annotation.format(),
+                        space_token(),
+                        body.format(),
+                    ]
+                )
+            }))]
+        )
     }
 }

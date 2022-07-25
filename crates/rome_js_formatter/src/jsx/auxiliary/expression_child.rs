@@ -19,6 +19,12 @@ impl FormatNodeRule<JsxExpressionChild> for FormatJsxExpressionChild {
 
         let l_curly_token = l_curly_token?;
         let r_curly_token = r_curly_token?;
+        let comments = f.context().comments();
+
+        let has_comments = expression
+            .as_ref()
+            .map(|expr| comments.has_comments(expr.syntax()))
+            .unwrap_or_else(|| comments.has_dangling_trivia(&r_curly_token));
 
         // If the expression child is just a string literal with one space in it, it's a JSX space
         if let Some(JsAnyExpression::JsAnyLiteralExpression(
@@ -29,13 +35,9 @@ impl FormatNodeRule<JsxExpressionChild> for FormatJsxExpressionChild {
             let trimmed_text = str_token.text_trimmed();
 
             let has_space_text = trimmed_text == "' '" || trimmed_text == "\" \"";
-            let no_trivia = !str_token.has_leading_non_whitespace_trivia()
-                && !str_token.has_trailing_comments()
-                && !l_curly_token.has_trailing_comments()
-                && !r_curly_token.has_leading_non_whitespace_trivia();
             let is_suppressed = f.context().is_suppressed(string_literal.syntax());
 
-            if has_space_text && no_trivia && !is_suppressed {
+            if has_space_text && !has_comments && !is_suppressed {
                 return write![
                     f,
                     [
@@ -47,14 +49,25 @@ impl FormatNodeRule<JsxExpressionChild> for FormatJsxExpressionChild {
             }
         }
 
-        write![
+        write!(
             f,
-            [group_elements(&format_args![
-                l_curly_token.format(),
-                expression.format(),
-                line_suffix_boundary(),
-                r_curly_token.format()
-            ])]
-        ]
+            [group_elements(&format_with(|f| {
+                write!(f, [l_curly_token.format()])?;
+
+                if has_comments {
+                    write!(
+                        f,
+                        [soft_block_indent(&format_args![
+                            expression.format(),
+                            line_suffix_boundary()
+                        ])]
+                    )?;
+                } else {
+                    write!(f, [expression.format(), line_suffix_boundary()])?;
+                }
+
+                write!(f, [r_curly_token.format()])
+            }))]
+        )
     }
 }

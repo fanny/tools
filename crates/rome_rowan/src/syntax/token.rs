@@ -156,8 +156,17 @@ impl<L: Language> SyntaxToken<L> {
     pub fn next_sibling_or_token(&self) -> Option<SyntaxElement<L>> {
         self.raw.next_sibling_or_token().map(NodeOrToken::from)
     }
+
+    pub fn next_sibling(&self) -> Option<SyntaxNode<L>> {
+        self.raw.next_sibling().map(SyntaxNode::from)
+    }
+
     pub fn prev_sibling_or_token(&self) -> Option<SyntaxElement<L>> {
         self.raw.prev_sibling_or_token().map(NodeOrToken::from)
+    }
+
+    pub fn prev_sibling(&self) -> Option<SyntaxNode<L>> {
+        self.raw.prev_sibling().map(SyntaxNode::from)
     }
 
     pub fn siblings_with_tokens(

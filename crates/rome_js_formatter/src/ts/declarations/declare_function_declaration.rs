@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::utils::FormatWithSemicolon;
 
-use rome_formatter::write;
+use rome_formatter::{format_args, write};
 use rome_js_syntax::TsDeclareFunctionDeclaration;
 use rome_js_syntax::TsDeclareFunctionDeclarationFields;
 
@@ -36,8 +36,10 @@ impl FormatNodeRule<TsDeclareFunctionDeclaration> for FormatTsDeclareFunctionDec
                     space_token(),
                     id.format(),
                     type_parameters.format(),
-                    parameters.format(),
-                    return_type_annotation.format(),
+                    group_elements(&format_args![
+                        parameters.format(),
+                        return_type_annotation.format(),
+                    ])
                 ]
             )
         });

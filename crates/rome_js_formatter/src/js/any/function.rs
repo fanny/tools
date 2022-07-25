@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use crate::utils::is_simple_expression;
-use rome_formatter::{format_args, write};
+use rome_formatter::{format_args, write, CstFormatContext};
 use rome_js_syntax::{
     JsAnyArrowFunctionParameters, JsAnyExpression, JsAnyFunction, JsAnyFunctionBody,
 };
@@ -34,19 +34,29 @@ impl FormatRule<JsAnyFunction> for FormatJsAnyFunction {
 
         write!(f, [node.type_parameters().format()])?;
 
-        match node.parameters()? {
-            JsAnyArrowFunctionParameters::JsAnyBinding(binding) => write!(
-                f,
-                [format_parenthesize(&format_args![
-                    binding.format(),
-                    if_group_breaks(&token(",")),
-                ],)
-                .grouped_with_soft_block_indent()]
-            )?,
-            JsAnyArrowFunctionParameters::JsParameters(params) => write![f, [params.format()]]?,
-        }
+        let format_parameters_with_return_annotation = format_with(|f| {
+            match node.parameters()? {
+                JsAnyArrowFunctionParameters::JsAnyBinding(binding) => write!(
+                    f,
+                    [
+                        token("("),
+                        soft_block_indent(&format_args![
+                            binding.format(),
+                            if_group_breaks(&token(","))
+                        ]),
+                        token(")"),
+                    ]
+                )?,
+                JsAnyArrowFunctionParameters::JsParameters(params) => write![f, [params.format()]]?,
+            }
 
-        write![f, [node.return_type_annotation().format(), space_token()]]?;
+            write![f, [node.return_type_annotation().format(), space_token()]]
+        });
+
+        write!(
+            f,
+            [group_elements(&format_parameters_with_return_annotation)]
+        )?;
 
         // We create a new group for everything after the parameters. That way if the parameters
         // get broken, we don't line break the arrow and the body if they can fit on the same line.
@@ -91,7 +101,7 @@ impl FormatRule<JsAnyFunction> for FormatJsAnyFunction {
                 JsAnyExpression::JsArrowFunctionExpression(_) => true,
                 JsAnyExpression::JsParenthesizedExpression(_) => true,
                 JsAnyExpression::JsxTagExpression(_) => true,
-                expr => is_simple_expression(&expr)?,
+                expr => is_simple_expression(&expr, &f.context().comments())?,
             },
         };
 

@@ -6,9 +6,11 @@ use rome_formatter::{
 use rome_js_syntax::suppression::{parse_suppression_comment, SuppressionCategory};
 
 use rome_js_syntax::{
-    JsAnyClass, JsArrayHole, JsBlockStatement, JsFunctionBody, JsImportAssertionEntry, JsLanguage,
-    JsNamedImportSpecifiers, JsObjectMemberList, JsPropertyObjectMember, JsStaticMemberExpression,
-    JsSyntaxKind, SourceType, TsEnumDeclaration, TsInterfaceDeclaration,
+    JsAnyClass, JsArrayHole, JsBlockStatement, JsCallArgumentList, JsCallArguments,
+    JsConditionalExpression, JsFunctionBody, JsImportAssertionEntry, JsLanguage,
+    JsNamedImportSpecifiers, JsObjectMemberList, JsParameters, JsPropertyObjectMember,
+    JsStaticMemberExpression, JsSyntaxKind, SourceType, TsConditionalType, TsEnumDeclaration,
+    TsInterfaceDeclaration,
 };
 use rome_rowan::{
     AstNode, AstNodeList, AstSeparatedList, Direction, SyntaxElement, SyntaxTriviaPieceComments,
@@ -304,7 +306,9 @@ impl CommentStyle<JsLanguage> for JsCommentStyle {
                             };
                         }
                     }
-                } else if TsInterfaceDeclaration::can_cast(preceding_parent.kind()) {
+                } else if (!comment.is_trailing_token_trivia() || comment.lines_after() > 0)
+                    && TsInterfaceDeclaration::can_cast(preceding_parent.kind())
+                {
                     let interface_declaration =
                         TsInterfaceDeclaration::unwrap_cast(preceding_parent);
 
@@ -392,6 +396,75 @@ impl CommentStyle<JsLanguage> for JsCommentStyle {
                 comment,
             };
         }
+        // Make line comments inside of an empty call arguments trailing comments of the call arguments
+        // so that they get moved out of the parentheses.
+        // ```javascript
+        // expect( // remains a dangling comment
+        //     // test
+        // )
+        // ```
+        // becomes
+        // ```javascript
+        // expect(); // remains a dangling comment
+        // // test
+        // ```
+        else if JsCallArguments::can_cast(enclosing_node.kind()) {
+            let arguments = JsCallArguments::unwrap_cast(enclosing_node.clone());
+
+            if arguments.r_paren_token().as_ref() == Ok(comment.following_token())
+                && arguments.args().is_empty()
+                && comment.kind().is_line()
+            {
+                return CommentPosition::Trailing {
+                    node: arguments.into_syntax(),
+                    comment,
+                };
+            }
+        }
+        // Moves leading comments of `?` and `:` for conditional expressions to the following node if they are part of
+        // the tokens leading trivia (not if they are on the same line as the trivia)
+        // ```javascript
+        // type T4 = test extends string
+        //     /* something */
+        //     ? unknown : test extends number ? undefined
+        //     /* else */
+        //   :
+        //         undefined;
+        // ```
+        else if (TsConditionalType::can_cast(enclosing_node.kind())
+            || JsConditionalExpression::can_cast(enclosing_node.kind()))
+            && !comment.is_trailing_token_trivia()
+        {
+            if let Some(consequent_or_alternate) = comment.following_token().next_sibling() {
+                return CommentPosition::Leading {
+                    node: consequent_or_alternate,
+                    comment,
+                };
+            }
+        } else if JsParameters::can_cast(enclosing_node.kind()) {
+            let parameters = JsParameters::unwrap_cast(enclosing_node);
+
+            if parameters.r_paren_token().as_ref() == Ok(comment.following_token()) {
+                if let Some(Ok(last_parameter)) = parameters.items().iter().last() {
+                    return CommentPosition::Trailing {
+                        node: last_parameter.into_syntax(),
+                        comment,
+                    };
+                }
+            }
+        }
+        //         if JsNamedImportSpecifiers::can_cast(enclosing_node.kind()) {
+        //     let import_specifiers = JsNamedImportSpecifiers::unwrap_cast(enclosing_node.clone());
+        //
+        //     if import_specifiers.r_curly_token().as_ref() == Ok(comment.following_token()) {
+        //         if let Some(Ok(last_specifier)) = import_specifiers.specifiers().iter().last() {
+        //             return CommentPosition::Trailing {
+        //                 node: last_specifier.into_syntax(),
+        //                 comment,
+        //             };
+        //         }
+        //     }
+        // }
 
         CommentPosition::Default(comment)
     }

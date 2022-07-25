@@ -1,11 +1,11 @@
 use crate::prelude::*;
 use crate::utils::{is_simple_expression, FormatPrecedence};
-use rome_formatter::write;
+use rome_formatter::{write, Comments, CstFormatContext};
 
 use crate::utils::JsAnyBinaryLikeExpression;
 
 use rome_js_syntax::{
-    JsAnyExpression, JsAnyLiteralExpression, JsParenthesizedExpression,
+    JsAnyExpression, JsAnyLiteralExpression, JsLanguage, JsParenthesizedExpression,
     JsParenthesizedExpressionFields, JsSyntaxKind,
 };
 use rome_rowan::{AstNode, SyntaxResult};
@@ -29,7 +29,7 @@ impl FormatNodeRule<JsParenthesizedExpression> for FormatJsParenthesizedExpressi
 
         let expression = expression?;
 
-        if is_simple_parenthesized_expression(node)? {
+        if is_simple_parenthesized_expression(node, &f.context().comments())? {
             if parenthesis_can_be_omitted {
                 write!(f, [format_removed(&l_paren_token?)])?;
             } else {
@@ -110,22 +110,15 @@ impl FormatNodeRule<JsParenthesizedExpression> for FormatJsParenthesizedExpressi
     }
 }
 
-fn is_simple_parenthesized_expression(node: &JsParenthesizedExpression) -> SyntaxResult<bool> {
-    let JsParenthesizedExpressionFields {
-        l_paren_token,
-        expression,
-        r_paren_token,
-    } = node.as_fields();
-
-    if l_paren_token?.has_trailing_comments() || r_paren_token?.has_leading_comments() {
+fn is_simple_parenthesized_expression(
+    node: &JsParenthesizedExpression,
+    comments: &Comments<JsLanguage>,
+) -> SyntaxResult<bool> {
+    if comments.has_trivia(node.syntax()) {
         return Ok(false);
     }
 
-    if !is_simple_expression(&expression?)? {
-        return Ok(false);
-    }
-
-    Ok(true)
+    is_simple_expression(&node.expression()?, comments)
 }
 
 fn parenthesis_can_be_omitted(node: &JsParenthesizedExpression) -> SyntaxResult<bool> {

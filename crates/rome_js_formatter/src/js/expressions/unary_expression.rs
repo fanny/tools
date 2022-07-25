@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use crate::utils::is_simple_expression;
-use rome_formatter::write;
+use rome_formatter::{write, CstFormatContext};
 
 use rome_js_syntax::JsPreUpdateOperator;
 use rome_js_syntax::{JsAnyExpression, JsUnaryExpression};
@@ -62,7 +62,7 @@ impl FormatNodeRule<JsUnaryExpression> for FormatJsUnaryExpression {
 
             let parenthesize = format_parenthesize(&format_argument);
 
-            if is_simple_expression(&argument)? {
+            if is_simple_expression(&argument, &f.context().comments())? {
                 parenthesize.fmt(f)
             } else {
                 parenthesize.grouped_with_soft_block_indent().fmt(f)

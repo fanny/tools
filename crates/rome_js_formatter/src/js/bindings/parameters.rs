@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+use rome_formatter::cst_builders::format_dangling_trivia;
 use rome_formatter::write;
 use rome_js_syntax::JsParameters;
 use rome_js_syntax::JsParametersFields;
@@ -15,12 +16,22 @@ impl FormatNodeRule<JsParameters> for FormatJsParameters {
             r_paren_token,
         } = node.as_fields();
 
-        write!(
-            f,
-            [
-                format_delimited(&l_paren_token?, &items.format(), &r_paren_token?,)
-                    .soft_block_indent()
-            ]
-        )
+        let r_paren_token = r_paren_token?;
+
+        write!(f, [l_paren_token.format()])?;
+
+        if items.is_empty() {
+            write!(f, [format_dangling_trivia(&r_paren_token)])?;
+        } else {
+            write!(
+                f,
+                [
+                    soft_block_indent(&items.format()),
+                    if_group_fits_on_line(&line_suffix_boundary())
+                ]
+            )?;
+        }
+
+        write!(f, [r_paren_token.format()])
     }
 }

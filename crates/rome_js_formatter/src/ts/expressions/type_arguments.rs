@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use crate::utils::should_hug_type;
-use rome_formatter::write;
+use rome_formatter::cst_builders::format_dangling_trivia;
+use rome_formatter::{write, CstFormatContext, DanglingTrivia};
 use rome_js_syntax::{
     JsAnyExpression, JsSyntaxKind, JsVariableDeclarator, TsType, TsTypeArguments,
     TsTypeArgumentsFields,
@@ -16,6 +17,30 @@ impl FormatNodeRule<TsTypeArguments> for FormatTsTypeArguments {
             ts_type_argument_list,
             r_angle_token,
         } = node.as_fields();
+
+        let r_angle_token = r_angle_token?;
+
+        if ts_type_argument_list.is_empty() {
+            let has_only_block_comments = f
+                .context()
+                .comments()
+                .dangling_trivia(&r_angle_token)
+                .iter()
+                .any(|trivia| match trivia {
+                    DanglingTrivia::Comment(comment) => !comment.kind().is_line(),
+                    DanglingTrivia::SkippedToken(_) => false,
+                });
+
+            write!(f, [l_angle_token.format()])?;
+
+            if has_only_block_comments {
+                write!(f, [format_dangling_trivia(&r_angle_token)])?;
+            } else {
+                write!(f, [format_dangling_trivia(&r_angle_token).indented()])?;
+            }
+
+            return write!(f, [r_angle_token.format()]);
+        }
 
         // We want to check if we are inside something like this:
         // const foo: SomeThing<{ [P in "x" | "y"]: number }> = func();
@@ -71,8 +96,8 @@ impl FormatNodeRule<TsTypeArguments> for FormatTsTypeArguments {
                 })
             });
 
-        let should_inline = !is_arrow_function_variables
-            && (ts_type_argument_list.len() == 0 || first_argument_can_be_hugged_or_is_null_type);
+        let should_inline =
+            !is_arrow_function_variables && (first_argument_can_be_hugged_or_is_null_type);
 
         if should_inline {
             write!(
@@ -89,7 +114,7 @@ impl FormatNodeRule<TsTypeArguments> for FormatTsTypeArguments {
                 [format_delimited(
                     &l_angle_token?,
                     &ts_type_argument_list.format(),
-                    &r_angle_token?,
+                    &r_angle_token,
                 )
                 .soft_block_indent()]
             )

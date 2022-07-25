@@ -34,7 +34,7 @@ impl Conditional {
                 if f.context().is_suppressed(expr.syntax()) {
                     write!(f, [format_suppressed_node(expr.syntax())])
                 } else {
-                    write![f, [expr.test()?.format(), space_token(),]]
+                    write![f, [expr.test()?.format(), space_token()]]
                 }
             }
             Conditional::Type(t) => {

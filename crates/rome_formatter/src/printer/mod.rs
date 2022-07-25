@@ -223,10 +223,6 @@ impl<'a> Printer<'a> {
                 self.queue_line_suffixes(HARD_BREAK, args, queue);
             }
 
-            FormatElement::Comment(content) => {
-                queue.extend_with_args(content.iter(), args);
-            }
-
             FormatElement::Verbatim(verbatim) => {
                 if let VerbatimKind::Verbatim { length } = &verbatim.kind {
                     self.state.verbatim_markers.push(TextRange::at(
@@ -785,8 +781,6 @@ fn fits_element_on_line<'a, 'rest>(
                 return Fits::No;
             }
         }
-
-        FormatElement::Comment(content) => queue.extend(content.iter(), args),
 
         FormatElement::Verbatim(verbatim) => queue.extend(verbatim.content.iter(), args),
         FormatElement::BestFitting(best_fitting) => {

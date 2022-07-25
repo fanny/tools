@@ -58,7 +58,7 @@ module Y3 {
   }
 
   // Apparently this parses :P
-    export
+  export
   private
   public
   protected

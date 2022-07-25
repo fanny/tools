@@ -20,7 +20,7 @@ impl FormatNodeRule<TsFunctionType> for FormatTsFunctionType {
             f,
             [
                 type_parameters.format(),
-                parameters.format(),
+                group_elements(&parameters.format()),
                 space_token(),
                 fat_arrow_token.format(),
                 space_token(),

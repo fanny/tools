@@ -315,11 +315,7 @@ fn write_groups(
             ))]
         )
     } else {
-        // TODO This line suffix boundary shouldn't be needed but currently is because comments
-        // can move over node boundaries. Follow up when re-working member chain formatting
-        let mut buffer = PreambleBuffer::new(f, line_suffix_boundary());
-
-        write!(buffer, [format_with(|f| { groups.write(f) })])
+        groups.write(f)
     }
 }
 

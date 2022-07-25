@@ -1,6 +1,5 @@
 ---
 source: crates/rome_js_formatter/tests/spec_test.rs
-assertion_line: 257
 expression: type_member.ts
 ---
 # Input
@@ -109,7 +108,9 @@ type F = {
 		deeeeeeeeeeeeeee,
 		deeeeeeeeeeeeeeee,
 		deeeeeeeewweeeeee,
-	>(loreum: string);
+	>(
+		loreum: string,
+	);
 };
 
 type G = {

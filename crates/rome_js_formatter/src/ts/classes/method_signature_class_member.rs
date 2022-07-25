@@ -36,8 +36,10 @@ impl FormatNodeRule<TsMethodSignatureClassMember> for FormatTsMethodSignatureCla
                     name.format(),
                     question_mark_token.format(),
                     type_parameters.format(),
-                    parameters.format(),
-                    return_type_annotation.format(),
+                    group_elements(&format_args![
+                        parameters.format(),
+                        return_type_annotation.format(),
+                    ])
                 ),
                 semicolon_token.as_ref()
             )]

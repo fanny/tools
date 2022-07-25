@@ -135,8 +135,17 @@ impl SyntaxToken {
     pub fn next_sibling_or_token(&self) -> Option<SyntaxElement> {
         self.data().next_sibling_or_token()
     }
+
+    pub fn next_sibling(&self) -> Option<SyntaxNode> {
+        self.data().next_sibling()
+    }
+
     pub fn prev_sibling_or_token(&self) -> Option<SyntaxElement> {
         self.data().prev_sibling_or_token()
+    }
+
+    pub fn prev_sibling(&self) -> Option<SyntaxNode> {
+        self.data().prev_sibling()
     }
 
     #[inline]
