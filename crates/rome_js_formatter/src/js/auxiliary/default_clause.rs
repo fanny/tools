@@ -1,5 +1,6 @@
 use crate::prelude::*;
-use rome_formatter::{format_args, write};
+use rome_formatter::cst_builders::format_dangling_trivia;
+use rome_formatter::{format_args, write, CstFormatContext};
 use rome_js_syntax::JsDefaultClause;
 use rome_js_syntax::{JsAnyStatement, JsDefaultClauseFields};
 use rome_rowan::AstNodeList;
@@ -15,15 +16,26 @@ impl FormatNodeRule<JsDefaultClause> for FormatJsDefaultClause {
             consequent,
         } = node.as_fields();
 
+        let colon_token = colon_token?;
+
         let first_child_is_block_stmt = matches!(
             consequent.iter().next(),
             Some(JsAnyStatement::JsBlockStatement(_))
         );
 
+        f.state_mut().mark_comment_as_formatted(&colon_token);
+
         write!(
             f,
             [default_token.format(), colon_token.format(), space_token()]
         )?;
+
+        if f.context().comments().has_dangling_trivia(&colon_token) {
+            write!(
+                f,
+                [format_dangling_trivia(&colon_token).ignore_formatted_check()]
+            )?;
+        }
 
         if consequent.is_empty() {
             write!(f, [hard_line_break()])

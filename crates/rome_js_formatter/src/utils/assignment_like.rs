@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::utils::member_chain::is_member_call_chain;
 use crate::utils::object::write_member_name;
 use crate::utils::JsAnyBinaryLikeExpression;
+use rome_formatter::cst_builders::{format_leading_comments, format_trailing_comments};
 use rome_formatter::{format_args, write, Comments, CstFormatContext, VecBuffer};
 use rome_js_syntax::JsAnyLiteralExpression;
 use rome_js_syntax::{
@@ -378,6 +379,7 @@ impl JsAnyAssignmentLike {
                     .mark_suppression_checked(name.syntax());
 
                 let width = write_member_name(&name.into(), f)?;
+
                 let text_width_for_break =
                     (u8::from(f.context().tab_width()) + MIN_OVERLAP_FOR_BREAK) as usize;
                 Ok(width < text_width_for_break)

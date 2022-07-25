@@ -33,7 +33,8 @@ impl FormatNodeRule<JsIfStatement> for FormatJsIfStatement {
         )?;
 
         if let Some(else_clause) = else_clause {
-            // Place the `else` clause on its own line if the block has any trailing line comments.
+            // Place the `else` clause on its own line if the consequent has any trailing line comments
+            // or the else clause any leading comments
             // Used to format
             // ```
             // if (test) {
@@ -42,10 +43,11 @@ impl FormatNodeRule<JsIfStatement> for FormatJsIfStatement {
             // // comment
             // else {}
             // ```
-            if f.context()
-                .comments()
+            let comments = f.context().comments();
+            if comments
                 .trailing_comments(consequent.syntax())
                 .iter()
+                .chain(comments.leading_comments(else_clause.syntax()).iter())
                 .any(|comment| comment.kind().is_line())
             {
                 write!(f, [hard_line_break()])?;
@@ -70,23 +72,26 @@ impl Format<JsFormatContext> for FormatIfElseConsequentBlock<'_> {
     fn fmt(&self, f: &mut Formatter<JsFormatContext>) -> FormatResult<()> {
         let stmt = &self.0;
 
-        if matches!(stmt, JsAnyStatement::JsBlockStatement(_)) {
-            write!(f, [space_token(), stmt.format()])
-        }
-        // If the body is an empty statement, force a line break to ensure behavior
-        // is coherent with `is_non_collapsable_empty_block`
-        else if matches!(stmt, JsAnyStatement::JsEmptyStatement(_)) {
-            write!(f, [stmt.format(), hard_line_break()])
-        } else {
-            write!(
-                f,
-                [
-                    space_token(),
-                    token("{"),
-                    block_indent(&stmt.format()),
-                    token("}")
-                ]
-            )
+        match stmt {
+            JsAnyStatement::JsBlockStatement(block) => {
+                write!(f, [space_token(), block.format()])
+            }
+            // If the body is an empty statement, force a line break to ensure behavior
+            // is coherent with `is_non_collapsable_empty_block`
+            JsAnyStatement::JsEmptyStatement(stmt) => {
+                write!(f, [stmt.format(), hard_line_break()])
+            }
+            stmt => {
+                write!(
+                    f,
+                    [
+                        space_token(),
+                        token("{"),
+                        block_indent(&stmt.format()),
+                        token("}")
+                    ]
+                )
+            }
         }
     }
 }

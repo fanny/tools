@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use rome_formatter::write;
+use rome_formatter::{format_args, write};
 
 use crate::utils::FormatTypeMemberSeparator;
 
@@ -28,8 +28,7 @@ impl FormatNodeRule<TsConstructSignatureTypeMember> for FormatTsConstructSignatu
                 new_token.format(),
                 space_token(),
                 type_parameters.format(),
-                parameters.format(),
-                type_annotation.format(),
+                group_elements(&format_args![parameters.format(), type_annotation.format(),]),
                 FormatTypeMemberSeparator::new(separator_token.as_ref()),
             ]
         ]

@@ -126,6 +126,7 @@ pub const fn format_dangling_trivia<L: Language>(
     FormatDanglingTrivia {
         token,
         indent: false,
+        ignore_formatted_check: false,
     }
 }
 
@@ -133,11 +134,17 @@ pub const fn format_dangling_trivia<L: Language>(
 pub struct FormatDanglingTrivia<'a, L: Language> {
     token: &'a SyntaxToken<L>,
     indent: bool,
+    ignore_formatted_check: bool,
 }
 
 impl<L: Language> FormatDanglingTrivia<'_, L> {
     pub fn indented(mut self) -> Self {
         self.indent = true;
+        self
+    }
+
+    pub fn ignore_formatted_check(mut self) -> Self {
+        self.ignore_formatted_check = true;
         self
     }
 }
@@ -147,7 +154,7 @@ where
     Context: CstFormatContext,
 {
     fn fmt(&self, f: &mut Formatter<Context>) -> FormatResult<()> {
-        if f.state().is_token_trivia_formatted(self.token) {
+        if !self.ignore_formatted_check && f.state().is_token_trivia_formatted(self.token) {
             return Ok(());
         }
 

@@ -307,7 +307,7 @@ impl<L: Language> Comments<L> {
             }
         }
 
-        builder.finish()
+        dbg!(builder.finish())
     }
 
     /// Returns `true` if the given [node] has
